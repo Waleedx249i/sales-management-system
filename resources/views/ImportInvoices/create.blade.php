@@ -2,10 +2,16 @@
 
 @section('content')
 <style>
+    /* لضمان ظهور القائمة فوق كل شيء */
     .product-dropdown { z-index: 9999 !important; }
     .table-container { min-height: 500px; } 
     input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     .font-mono { font-family: 'JetBrains Mono', monospace; }
+    
+    /* تحسين شكل السكرول بار في القائمة */
+    .product-dropdown::-webkit-scrollbar { width: 6px; }
+    .product-dropdown::-webkit-scrollbar-track { background: #f1f1f1; }
+    .product-dropdown::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 </style>
 
 <div class="max-w-[100rem] mx-auto p-6" x-data="{ exchangeRate: 76 }">
@@ -85,10 +91,9 @@
                     <h3 class="font-black text-slate-700 uppercase text-xs tracking-[0.2em] flex items-center gap-2">
                         <i class="fa-solid fa-list-ol text-slate-400"></i> تفاصيل أصناف الشحنة
                     </h3>
-                    <span class="text-[10px] font-black text-indigo-500 bg-indigo-50 px-3 py-1 rounded-lg">الأسعار تشمل التحميل</span>
                 </div>
 
-                <div class="overflow-x-auto">
+                <div class="">
                     <table class="w-full text-right">
                         <thead>
                             <tr class="text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-50">
@@ -97,7 +102,6 @@
                                 <th class="p-6 text-center">EGP</th>
                                 <th class="p-6 text-center">SDG</th>
                                 <th class="p-6 text-center w-24">الكمية</th>
-                                <th class="p-6 text-center">الإجمالي</th>
                                 <th class="p-6 text-center text-indigo-600 bg-indigo-50/30">التكلفة النهائية</th>
                                 <th class="p-6"></th>
                             </tr>
@@ -118,23 +122,36 @@
                                         <input type="text" placeholder="ابحث باسم الصنف..." onkeyup="filterProducts(this)" onfocus="showDropdown(this)"
                                                class="product-search-input w-full pr-9 pl-3 py-3 border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-indigo-500 outline-none transition-all">
                                         
-                                        <div class="product-dropdown hidden absolute right-0 left-0 mt-2 bg-white shadow-2xl rounded-2xl max-h-64 overflow-y-auto border border-slate-200 z-[999]">
+                                        <div class="product-dropdown hidden absolute right-0 left-0 mt-2 bg-white shadow-2xl rounded-[2rem] max-h-80 overflow-y-auto border border-slate-200 z-[9999] min-w-[380px]">
                                             @foreach($products as $product)
-                                            <div class="p-4 hover:bg-indigo-50 cursor-pointer flex justify-between items-center border-b border-slate-50 transition-colors"
+                                            @php
+                                                // منطق تحديد مسار الصورة
+                                                $currentImg = 'https://ui-avatars.com/api/?name=' . urlencode($product->name) . '&background=f1f5f9&color=64748b&size=128';
+                                                if($product->image) {
+                                                    if(file_exists(public_path($product->image))) {
+                                                        $currentImg = asset($product->image);
+                                                    } elseif(file_exists(public_path('storage/' . $product->image))) {
+                                                        $currentImg = asset('storage/' . $product->image);
+                                                    }
+                                                }
+                                            @endphp
+                                            <div class="p-3 hover:bg-indigo-50 cursor-pointer flex justify-between items-center border-b border-slate-50 transition-all group/item"
                                                  onclick="selectProduct(this, {
                                                      id: {{ $product->id }}, 
                                                      name: '{{ $product->name }}', 
                                                      code: '{{ $product->code }}', 
-                                                     img: '{{ $product->image ? asset('storage/'.$product->image) : '' }}'
+                                                     img: '{{ $currentImg }}'
                                                  })">
                                                 <div class="flex items-center gap-4">
-                                                    <i class="fa-solid fa-box text-slate-300"></i>
+                                                    <div class="w-12 h-12 rounded-xl overflow-hidden border border-slate-100 shadow-sm group-hover/item:border-indigo-200 transition-all bg-white">
+                                                        <img src="{{ $currentImg }}" class="w-full h-full object-cover">
+                                                    </div>
                                                     <div>
-                                                        <div class="font-black text-slate-700 text-xs tracking-tight">{{ $product->name }}</div>
-                                                        <div class="text-[9px] text-slate-400 font-mono italic">{{ $product->code }}</div>
+                                                        <div class="font-black text-slate-700 text-xs tracking-tight group-hover/item:text-indigo-600">{{ $product->name }}</div>
+                                                        <div class="text-[9px] text-slate-400 font-mono italic">#{{ $product->code }}</div>
                                                     </div>
                                                 </div>
-                                                <span class="text-[9px] bg-slate-100 px-2 py-1 rounded-md font-black text-slate-500">مخزن: {{ $product->quantity }}</span>
+                                                <span class="text-[10px] bg-slate-100 px-2 py-1 rounded-md font-black text-slate-500">مخزن: {{ $product->quantity }}</span>
                                             </div>
                                             @endforeach
                                         </div>
@@ -153,9 +170,6 @@
                                 <td class="p-4">
                                     <input type="number" name="items[0][qty]" placeholder="1" oninput="calculateAll()" 
                                            class="qty w-full text-center p-3 bg-slate-50 rounded-xl font-black font-mono outline-none border-2 border-transparent focus:border-indigo-400 focus:bg-white transition-all">
-                                </td>
-                                <td class="p-4">
-                                    <input type="text" class="row_total_sdg w-full text-center p-3 bg-transparent font-black text-slate-800 font-mono text-lg" readonly value="0">
                                 </td>
                                 <td class="p-4 bg-indigo-50/20">
                                     <input type="text" name="items[0][unit_cost]" readonly 
@@ -215,16 +229,14 @@
                         </div>
                         
                         <div class="bg-slate-900 p-6 rounded-[2rem] text-center shadow-2xl shadow-indigo-100 relative overflow-hidden group">
-                            <div class="absolute top-0 left-0 w-24 h-24 bg-white/5 -ml-12 -mt-12 rounded-full group-hover:scale-150 transition-transform"></div>
-                            <span class="block text-[9px] text-slate-400 font-black uppercase mb-2 tracking-[0.3em]">نسبة التحميل (Loading Ratio)</span>
+                            <span class="block text-[9px] text-slate-400 font-black uppercase mb-2 tracking-[0.3em]">نسبة التحميل</span>
                             <div class="flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-up-right-from-square text-emerald-400 text-xs"></i>
                                 <span id="cost_percentage_display" class="text-3xl font-black text-white font-mono italic">+0.00%</span>
                             </div>
                         </div>
 
                         <button type="submit" id="submitBtn" class="w-full bg-indigo-600 text-white py-5 rounded-[2rem] font-black shadow-xl shadow-indigo-200 hover:bg-indigo-700 active:scale-[0.98] transition-all flex justify-center items-center gap-3 uppercase tracking-tighter text-sm">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> حفظ وتحديث المخزن
+                            <i class="fa-solid fa-cloud-arrow-up"></i> حفظ  
                         </button>
                     </div>
                 </div>
@@ -256,6 +268,7 @@
         row.querySelector('.item-name-hidden').value = data.name;
         row.querySelector('.item-code-hidden').value = data.code;
         
+        // تحديث الصورة في السطر
         const imgTag = row.querySelector('.product-img');
         const placeholder = row.querySelector('.img-placeholder');
         if(data.img) {
@@ -285,8 +298,6 @@
             const rowTotal = sdgPrice * qty; 
             
             row.querySelector('.price_sdg_row').value = egp > 0 ? sdgPrice.toLocaleString() : "0";
-            row.querySelector('.row_total_sdg').value = rowTotal > 0 ? rowTotal.toLocaleString() : "0";
-            
             totalGoodsSdg += rowTotal;
         });
 

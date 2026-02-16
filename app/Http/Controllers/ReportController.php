@@ -20,10 +20,15 @@ class ReportController extends Controller
 
         $totalDebts = DB::table('sales_invoices')->sum('remaining_amount');
 
-        $topProducts = DB::table('sales_invoice_items as sii')
+       $topProducts = DB::table('sales_invoice_items as sii')
             ->join('products as p', 'p.id', '=', 'sii.product_id')
-            ->select('p.name', 'p.code', DB::raw('SUM(sii.quantity) as qty'))
-            ->groupBy('sii.product_id', 'p.name', 'p.code')
+            ->select(
+                'p.id', // إضافة المعرف هنا
+                'p.name', 
+                'p.code', 
+                DB::raw('SUM(sii.quantity) as qty')
+            )
+            ->groupBy('p.id', 'p.name', 'p.code') // إضافة المعرف في الجروب باي
             ->orderByDesc('qty')
             ->limit(5)
             ->get();
@@ -55,77 +60,105 @@ class ReportController extends Controller
     }
 
     // --- مبيعات المحل المباشرة ---
-    public function storeSales(Request $request)
-    {
-        $query = DB::table('sales_invoices as si');
+   public function storeSales(Request $request)
+{
+    $query = DB::table('sales_invoices as si');
 
-        if ($request->filled('date')) {
-            $query->whereDate('si.created_at', $request->date);
-        }
-        if ($request->filled('month')) {
-            $query->where('si.created_at', 'like', $request->month.'%');
-        }
-
-        $selectFields = [
-            'si.invoice_number',
-            'si.customer_name',
-            'si.final_amount',
-            'si.paid_amount',
-            'si.remaining_amount',
-            'si.status',
-            // تحويل التاريخ لنص صريح لمنع مشاكل الإكسيل
-            DB::raw("strftime('%d-%m-%Y', si.created_at) as date_text"),
-            DB::raw('(SELECT SUM(unit_cost * quantity) FROM sales_invoice_items WHERE sales_invoice_id = si.id) as total_cost'),
-        ];
-
-        $data = $query->select($selectFields)->orderByDesc('si.created_at')->get();
-
-        if ($request->has('export')) {
-            $headers = ['رقم الفاتورة', 'العميل', 'الإجمالي', 'المدفوع', 'المتبقي', 'الحالة', 'التاريخ', 'التكلفة'];
-
-            return $this->exportToExcel($data, $headers, 'Store_Report');
-        }
-
-        return view('reports.store_sales', compact('data'));
+    // 1. فلتر اليوم
+    if ($request->filled('date')) {
+        $query->whereDate('si.created_at', $request->date);
     }
+    
+    // 2. فلتر الشهر
+    if ($request->filled('month')) {
+        $query->where('si.created_at', 'like', $request->month.'%');
+    }
+
+    // --- الإضافات الجديدة ---
+    
+    // 3. فلتر السنة
+    if ($request->filled('year')) {
+        $query->whereYear('si.created_at', $request->year);
+    }
+
+    // 4. فلتر الفترة (من - إلى)
+    if ($request->filled('from_date') && $request->filled('to_date')) {
+        $query->whereBetween('si.created_at', [$request->from_date . ' 00:00:00', $request->to_date . ' 23:59:59']);
+    }
+
+    // --- نهاية الإضافات (باقي الكود كما هو تماماً) ---
+
+    $selectFields = [
+        'si.invoice_number',
+        'si.customer_name',
+        'si.final_amount',
+        'si.paid_amount',
+        'si.remaining_amount',
+        'si.status',
+        DB::raw("strftime('%d-%m-%Y', si.created_at) as date_text"),
+        DB::raw('(SELECT SUM(unit_cost * quantity) FROM sales_invoice_items WHERE sales_invoice_id = si.id) as total_cost'),
+    ];
+
+    $data = $query->select($selectFields)->orderByDesc('si.created_at')->get();
+
+    if ($request->has('export')) {
+        $headers = ['رقم الفاتورة', 'العميل', 'الإجمالي', 'المدفوع', 'المتبقي', 'الحالة', 'التاريخ', 'التكلفة'];
+        return $this->exportToExcel($data, $headers, 'Store_Report');
+    }
+
+    return view('reports.store_sales', compact('data'));
+}
 
     // --- مبيعات نقاط التوزيع (العهد) ---
-    public function posSales(Request $request)
-    {
-        $query = DB::table('pos_sales as ps')
-            ->join('pos_consignment_items as pci', 'ps.consignment_item_id', '=', 'pci.id')
-            ->join('pos_consignments as pc', 'pci.pos_consignment_id', '=', 'pc.id');
+   public function posSales(Request $request)
+{
+    $query = DB::table('pos_sales as ps')
+        ->join('pos_consignment_items as pci', 'ps.consignment_item_id', '=', 'pci.id')
+        ->join('pos_consignments as pc', 'pci.pos_consignment_id', '=', 'pc.id');
 
-        if ($request->filled('date')) {
-            $query->whereDate('ps.sale_date', $request->date);
-        }
-        if ($request->filled('pos_name')) {
-            $query->where('pc.pos_name', $request->pos_name);
-        }
-
-        $selectFields = [
-            'pc.pos_name',
-            'pci.product_name',
-            'pci.product_code',
-            'ps.quantity_sold',
-            'ps.unit_price',
-            'ps.total_amount',
-            DB::raw("strftime('%d-%m-%Y', ps.sale_date) as date_text"),
-            DB::raw('(pci.unit_cost * ps.quantity_sold) as item_cost'),
-        ];
-
-        $data = $query->select($selectFields)->orderByDesc('ps.sale_date')->get();
-
-        if ($request->has('export')) {
-            $headers = ['النقطة', 'الصنف', 'الكود', 'الكمية', 'السعر', 'الإجمالي', 'التاريخ', 'التكلفة'];
-
-            return $this->exportToExcel($data, $headers, 'POS_Report');
-        }
-
-        $posList = DB::table('pos_consignments')->distinct()->pluck('pos_name');
-
-        return view('reports.pos_sales', compact('data', 'posList'));
+    // 1. فلتر اليوم
+    if ($request->filled('date')) {
+        $query->whereDate('ps.sale_date', $request->date);
     }
+    // 2. فلتر الشهر
+    if ($request->filled('month')) {
+        $query->where('ps.sale_date', 'like', $request->month.'%');
+    }
+    // 3. فلتر السنة (جديد)
+    if ($request->filled('year')) {
+        $query->whereYear('ps.sale_date', $request->year);
+    }
+    // 4. فلتر الفترة (جديد)
+    if ($request->filled('from_date') && $request->filled('to_date')) {
+        $query->whereBetween('ps.sale_date', [$request->from_date . ' 00:00:00', $request->to_date . ' 23:59:59']);
+    }
+    // 5. فلتر نقطة التوزيع
+    if ($request->filled('pos_name')) {
+        $query->where('pc.pos_name', $request->pos_name);
+    }
+
+    $selectFields = [
+        'pc.pos_name',
+        'pci.product_name',
+        'pci.product_code',
+        'ps.quantity_sold',
+        'ps.unit_price',
+        'ps.total_amount',
+        DB::raw("strftime('%d-%m-%Y', ps.sale_date) as date_text"),
+        DB::raw('(pci.unit_cost * ps.quantity_sold) as item_cost'),
+    ];
+
+    $data = $query->select($selectFields)->orderByDesc('ps.sale_date')->get();
+
+    if ($request->has('export')) {
+        $headers = ['النقطة', 'الصنف', 'الكود', 'الكمية', 'السعر', 'الإجمالي', 'التاريخ', 'التكلفة'];
+        return $this->exportToExcel($data, $headers, 'POS_Report');
+    }
+
+    $posList = DB::table('pos_consignments')->distinct()->pluck('pos_name');
+
+    return view('reports.pos_sales', compact('data', 'posList'));
+}
 
     // --- تقرير المشتريات ---
     public function purchases(Request $request)

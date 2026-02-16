@@ -10,6 +10,12 @@ use App\Http\Controllers\SalesInvoiceController;
 use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\BackupController;
+
+Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
+Route::get('/backup/export', [BackupController::class, 'export'])->name('backup.export');
+Route::post('/backup/import', [BackupController::class, 'import'])->name('backup.import');
+
 Route::get('/', function () {
     return view('welcome');
 });

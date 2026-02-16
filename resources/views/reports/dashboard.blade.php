@@ -17,7 +17,7 @@
         <div class="bg-white p-6 rounded-[2rem] shadow-xl shadow-blue-100/50 border-b-4 border-blue-500 hover:scale-[1.03] transition-transform duration-300 group">
             <div class="flex justify-between items-start mb-4">
                 <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                    <i class="fa-solid fa-chart-line-up text-xl"></i>
+                    <i class="fa-solid fa-chart-line text-xl"></i>
                 </div>
                 <span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter">Daily Growth</span>
             </div>
@@ -30,7 +30,7 @@
         <div class="bg-white p-6 rounded-[2rem] shadow-xl shadow-red-100/50 border-b-4 border-red-500 hover:scale-[1.03] transition-transform duration-300 group">
             <div class="flex justify-between items-start mb-4">
                 <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 group-hover:bg-red-600 group-hover:text-white transition-colors">
-                    <i class="fa-solid fa-cart-flatbed-boxes text-xl"></i>
+                    <i class="fa-solid fa-cart-shopping text-xl"></i>
                 </div>
                 <span class="text-[10px] font-black text-red-400 uppercase tracking-tighter">Expenses</span>
             </div>
@@ -148,7 +148,8 @@
                     </td>
                     <td class="p-4 text-center">
                         <button class="text-slate-300 hover:text-indigo-600 transition-colors">
-                            <i class="fa-solid fa-circle-info text-lg"></i>
+                          <a href="{{ route('products.show', $product->id) }}" class="flex items-center gap-1">
+                              <i class="fa-solid fa-circle-info text-lg"></i>
                         </button>
                     </td>
                 </tr>

@@ -1,112 +1,141 @@
 @extends('layouts.app')
 
 @section('content')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
 <div class="container mx-auto px-6 py-8 min-h-screen bg-[#fcfcfd]">
+    
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
         <div class="flex items-center gap-4">
-            <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100">
-                <i class="fa-solid fa-map-location-dot text-2xl"></i>
+            <div class="w-16 h-16 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100">
+                <i class="fa-solid fa-map-location-dot text-3xl"></i>
             </div>
             <div>
                 <h1 class="text-3xl font-black text-slate-800 tracking-tighter italic uppercase">تقرير مبيعات العهد</h1>
-                <p class="text-sm text-slate-500 font-bold">تحليل أداء مبيعات النقاط الخارجية والمناديب</p>
+                <p class="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1 italic">Consignment Sales Intelligence</p>
             </div>
         </div>
 
         <div class="flex flex-wrap gap-3">
-            <button type="button" onclick="history.back()" class="bg-white border-2 border-slate-100 text-slate-600 px-5 py-2.5 rounded-xl font-black text-xs hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm">
-                <i class="fa-solid fa-chevron-right"></i>
-                رجوع للمبيعات
+            <button onclick="printTable()" class="bg-rose-600 text-white px-6 py-3 rounded-xl font-black text-xs hover:bg-rose-700 transition-all flex items-center gap-2 shadow-lg shadow-rose-100">
+                <i class="fa-solid fa-file-pdf"></i> تصدير PDF
             </button>
-            
-            <a href="{{ route('reports.store_sales') }}" class="bg-slate-100 text-slate-700 px-5 py-2.5 rounded-xl font-black text-xs hover:bg-slate-200 transition-all flex items-center gap-2">
-                <i class="fa-solid fa-shop"></i>
-                الانتقال للمحل
-            </a>
 
-            <a href="?export=true&date={{ request('date') }}&pos_name={{ request('pos_name') }}" class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-black text-xs hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-lg shadow-emerald-100">
-                <i class="fa-solid fa-file-csv"></i>
-                تصدير التقرير
+            <a href="?export=true&{{ http_build_query(request()->all()) }}" class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-black text-xs hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-lg shadow-emerald-100">
+                <i class="fa-solid fa-file-excel"></i> تصدير Excel
+            </a>
+            
+            <a href="{{ route('reports.store_sales') }}" class="bg-white border-2 border-slate-100 text-slate-500 px-6 py-3 rounded-xl font-black text-xs hover:bg-slate-50 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-shop"></i> تقارير المحل
             </a>
         </div>
     </div>
 
-    <form class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 mb-8 flex flex-wrap items-end gap-5">
-        <div class="flex-1 min-w-[200px]">
-            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 mr-2">نقطة التوزيع</label>
-            <div class="relative">
-                <i class="fa-solid fa-store absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
-                <select name="pos_name" class="w-full pr-10 pl-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold text-slate-600 appearance-none">
-                    <option value="">كل النقاط المتاحة</option>
-                    @foreach($posList as $name)
-                        <option value="{{ $name }}" {{ request('pos_name') == $name ? 'selected' : '' }}>{{ $name }}</option>
-                    @endforeach
-                </select>
+    <form class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8 space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-4 gap-4 border-l-2 border-slate-50 pl-8">
+                <div class="col-span-4 mb-2 flex items-center gap-2">
+                    <span class="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">خيارات الفلترة السريعة</span>
+                </div>
+                
+                <div class="sm:col-span-2 space-y-1">
+                    <label class="block text-[9px] font-black text-slate-500 mr-2">نقطة التوزيع</label>
+                    <select name="pos_name" class="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold text-xs text-slate-600 appearance-none">
+                        <option value="">كل النقاط</option>
+                        @foreach($posList as $name)
+                            <option value="{{ $name }}" {{ request('pos_name') == $name ? 'selected' : '' }}>{{ $name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-500 mr-2">بالشهر</label>
+                    <input type="month" name="month" value="{{ request('month') }}" class="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold text-xs text-slate-600">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-500 mr-2">بالسنة</label>
+                    <input type="number" name="year" placeholder="2024" value="{{ request('year') }}" class="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold text-xs text-slate-600">
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="col-span-2 mb-2 flex items-center gap-2">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">تحديد فترة مخصصة</span>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-500 mr-2">من تاريخ</label>
+                    <input type="date" name="from_date" value="{{ request('from_date') }}" class="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-emerald-500 font-bold text-xs text-slate-600">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-500 mr-2">إلى تاريخ</label>
+                    <input type="date" name="to_date" value="{{ request('to_date') }}" class="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-emerald-500 font-bold text-xs text-slate-600">
+                </div>
             </div>
         </div>
 
-        <div class="flex-1 min-w-[200px]">
-            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 mr-2">تاريخ الكشف</label>
-            <div class="relative">
-                <i class="fa-solid fa-calendar-check absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
-                <input type="date" name="date" value="{{ request('date') }}" 
-                       class="w-full pr-10 pl-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold text-slate-600">
-            </div>
+        <div class="flex items-center justify-between pt-4 border-t border-slate-50">
+            <a href="{{ route('reports.pos_sales') }}" class="text-[10px] font-black text-slate-300 hover:text-rose-500 transition-colors uppercase tracking-[0.2em]">
+                <i class="fa-solid fa-arrows-rotate mr-1"></i> إعادة ضبط
+            </a>
+            
+            <button type="submit" class="bg-indigo-900 text-white px-12 py-4 rounded-2xl font-black text-xs hover:bg-indigo-600 transition-all shadow-xl flex items-center gap-3 active:scale-95">
+                <i class="fa-solid fa-filter"></i>
+                تطبيق الفلترة المتقدمة
+            </button>
         </div>
-
-        <button type="submit" class="bg-indigo-600 text-white px-8 py-3.5 rounded-xl font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2">
-            <i class="fa-solid fa-arrows-rotate"></i>
-            تحديث البيانات
-        </button>
     </form>
 
-    <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+    <div id="printable-table" class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
         <table class="w-full text-right border-collapse">
             <thead>
-                <tr class="bg-indigo-50/50 text-indigo-400 text-[11px] font-black uppercase tracking-[0.15em] border-b border-indigo-50">
+                <tr class="bg-indigo-50/30 text-indigo-400 text-[10px] font-black uppercase tracking-widest border-b border-indigo-50">
                     <th class="p-6">نقطة التوزيع</th>
-                    <th class="p-6 text-center italic text-slate-400 font-normal">-- التفاصيل --</th>
+                    <th class="p-6">اسم المنتج</th>
                     <th class="p-6 text-center">الكمية المباعة</th>
-                    <th class="p-6 text-center font-black">إجمالي المبيعات</th>
-                    <th class="p-6 text-emerald-600 text-center">صافي الربح</th>
+                    <th class="p-6 text-center italic">الإجمالي</th>
+                    <th class="p-6 text-center text-emerald-600">صافي الربح</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-50">
                 @forelse($data as $p)
-                <tr class="hover:bg-indigo-50/20 transition-all group">
+                <tr class="hover:bg-indigo-50/10 transition-all group">
                     <td class="p-6">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-black">
-                                <i class="fa-solid fa-truck-ramp-box text-sm"></i>
+                            <div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center font-black text-[10px]">
+                                <i class="fa-solid fa-location-dot"></i>
                             </div>
-                            <span class="font-black text-indigo-700 text-lg">{{ $p->pos_name }}</span>
+                            <span class="font-black text-slate-700">{{ $p->pos_name }}</span>
                         </div>
                     </td>
-                    <td class="p-6 text-center">
-                        <span class="font-bold text-slate-600">{{ $p->product_name }}</span>
+                    <td class="p-6">
+                        <span class="font-bold text-slate-600 block text-sm">{{ $p->product_name }}</span>
+                        <span class="text-[9px] text-slate-400 font-mono tracking-tighter">{{ $p->product_code }}</span>
                     </td>
                     <td class="p-6 text-center">
-                        <span class="bg-slate-100 text-slate-500 px-4 py-1.5 rounded-full font-mono font-black text-sm">
+                        <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-lg font-mono font-black text-xs">
                             {{ $p->quantity_sold }}
                         </span>
                     </td>
-                    <td class="p-6 text-center font-mono font-black text-slate-800 text-lg tracking-tighter">
+                    <td class="p-6 text-center font-mono font-black text-slate-700">
                         {{ number_format($p->total_amount) }}
                     </td>
                     <td class="p-6 text-center">
-                        <div class="inline-flex items-center gap-2 text-emerald-600 font-black bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100/50">
-                            <i class="fa-solid fa-money-bill-trend-up text-xs"></i>
+                        <div class="inline-flex items-center gap-1 text-emerald-600 font-black bg-emerald-50 px-3 py-1.5 rounded-lg text-sm">
                             <span class="font-mono">+{{ number_format($p->total_amount - $p->item_cost) }}</span>
                         </div>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="p-20 text-center">
-                        <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-200">
-                            <i class="fa-solid fa-map-pin text-4xl"></i>
-                        </div>
-                        <p class="text-slate-400 font-black tracking-tighter text-xl">لا توجد بيانات مبيعات للنقاط حالياً</p>
+                    <td colspan="5" class="p-32 text-center">
+                        <i class="fa-solid fa-map-pin text-6xl text-slate-100 mb-4 block"></i>
+                        <p class="text-slate-400 font-black italic tracking-widest uppercase">No Consignment Records Found</p>
                     </td>
                 </tr>
                 @endforelse
@@ -115,8 +144,36 @@
     </div>
 </div>
 
+<script>
+    function printTable() {
+        const printContents = document.getElementById('printable-table').innerHTML;
+        const originalContents = document.body.innerHTML;
+
+        document.body.innerHTML = `
+            <div dir="rtl" style="padding: 40px; font-family: 'Arial';">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #4f46e5; padding-bottom: 10px; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #4f46e5;">تقرير مبيعات العهد</h2>
+                    <span style="font-size: 12px; font-weight: bold;">تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')}</span>
+                </div>
+                <style>
+                    table { width: 100%; border-collapse: collapse; }
+                    th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: right; font-size: 13px; }
+                    th { background-color: #f8fafc; color: #64748b; font-weight: 900; }
+                    .text-emerald-600 { color: #059669; }
+                </style>
+                ${printContents}
+            </div>
+        `;
+
+        window.print();
+        document.body.innerHTML = originalContents;
+        window.location.reload(); 
+    }
+</script>
+
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap');
+    body { font-family: 'Noto Kufi Arabic', sans-serif; }
     .font-mono { font-family: 'JetBrains Mono', monospace; }
 </style>
 @endsection

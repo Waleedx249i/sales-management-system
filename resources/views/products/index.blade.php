@@ -1,8 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
 <div class="container mx-auto px-4 py-8 min-h-screen bg-[#f8fafc]">
     
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
@@ -43,8 +41,18 @@
                     <tr class="hover:bg-indigo-50/30 transition-all group">
                         <td class="p-6">
                             <div class="relative w-14 h-14">
-                                <img src="{{ $product->image ? asset('storage/'.$product->image) : asset('default-product.png') }}" 
-                                     class="w-full h-full rounded-xl object-cover border-2 border-white shadow-md group-hover:scale-110 transition-transform">
+                                <img src="
+    @if($product->image && file_exists(public_path($product->image)))
+        {{ asset($product->image) }}
+    @elseif($product->image && file_exists(public_path('storage/' . $product->image)))
+        {{ asset('storage/' . $product->image) }}
+    @else
+        {{ 'https://ui-avatars.com/api/?name=' . urlencode($product->name) . '&background=f1f5f9&color=64748b&size=512&font-size=0.45' }}
+    @endif
+    " 
+    onerror="this.src='https://ui-avatars.com/api/?name=' + encodeURIComponent('{{ $product->name }}') + '&background=f1f5f9&color=64748b&size=512';"
+    class="w-full h-full rounded-xl object-cover border-2 border-white shadow-md group-hover:scale-110 transition-transform"
+    alt="{{ $product->name }}">
                                 <div class="absolute inset-0 rounded-xl bg-black/5 group-hover:bg-transparent transition-colors"></div>
                             </div>
                         </td>
@@ -87,11 +95,17 @@
 
                         <td class="p-6">
                             <div class="flex justify-center gap-2">
+                                <a href="{{ route('products.show', $product->id) }}" 
+                                   class="w-10 h-10 flex items-center justify-center text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-xl transition-all shadow-sm" 
+                                   title="عرض التفاصيل">
+                                    <i class="fa-solid fa-circle-info text-lg"></i>
+                                </a>
                                 <a href="{{ route('products.edit', $product->id) }}" 
                                    class="w-10 h-10 flex items-center justify-center text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-xl transition-all shadow-sm" 
                                    title="تعديل">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </a>
+
                                 
                                 <form action="{{ route('products.destroy', $product->id) }}" method="POST" 
                                       onsubmit="return confirm('⚠️ هل أنت متأكد من حذف هذا المنتج نهائياً؟')">

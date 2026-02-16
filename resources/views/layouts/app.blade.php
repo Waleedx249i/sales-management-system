@@ -36,8 +36,10 @@
                             <a href="{{ route('price-lists.index') }}" class="flex items-center gap-3 px-5 py-3 hover:bg-indigo-50 transition font-bold text-sm border-t border-slate-50">
                                 <i class="fa-solid fa-tags text-orange-500 w-5"></i> قوائم الأسعار
                             </a>
+                            
                         </div>
                     </div>
+                   
 
                     <a href="{{ route('sales.index') }}" class="px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all {{ Request::is('sales*') ? 'nav-link-active' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
                         <i class="fa-solid fa-cash-register"></i> المبيعات
@@ -107,13 +109,25 @@
                             </a>
                         </div>
                     </div>
+                     <div class="hidden xl:flex items-center gap-1">
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" @click.away="open = false" 
+                                class="px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all {{ Request::is('backup*') ? 'nav-link-active' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
+                            <i class="fa-solid fa-gear"></i>  الاعدادات
+                            <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                        </button>
+                        <div x-show="open" x-cloak x-transition class="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 text-slate-800">
+                            <a href="{{ route('backup.index') }}" class="flex items-center gap-3 px-5 py-3 hover:bg-indigo-50 transition font-bold text-sm">
+                                <i class="fa-solid fa-database text-indigo-500 w-5"></i> النسخ الاحتياطي
+                            </a>
+                        </div>
+                    </div>
                 </div>
+                
             </div>
 
             <div class="flex items-center gap-4">
-                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-lg">
-                    A
-                </div>
+               
             </div>
         </div>
     </div>

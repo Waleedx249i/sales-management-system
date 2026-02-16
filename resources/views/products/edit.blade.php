@@ -1,7 +1,25 @@
 @extends('layouts.app')
 
 @section('content')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+@if ($errors->any())
+    <div class="mb-6 p-4 bg-red-50 border-r-4 border-red-500 rounded-2xl">
+        <div class="flex items-center mb-2">
+            <i class="fa-solid fa-circle-exclamation text-red-500 ml-2"></i>
+            <h3 class="text-red-800 font-black text-sm">حدث خطأ في المدخلات:</h3>
+        </div>
+        <ul class="list-disc list-inside text-xs text-red-600 font-bold space-y-1">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="mb-6 p-4 bg-orange-50 border-r-4 border-orange-500 text-orange-800 rounded-2xl text-xs font-bold">
+        <i class="fa-solid fa-triangle-exclamation ml-2"></i> {{ session('error') }}
+    </div>
+@endif
 
 <div class="max-w-3xl mx-auto px-4 py-8 min-h-screen">
     <div class="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden relative">
